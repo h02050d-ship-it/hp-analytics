@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HPアクセス分析 | 林材木店</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%233d2b1f'/%3E%3Ctext x='32' y='45' font-size='40' text-anchor='middle' fill='%23ffffff' font-family='sans-serif' font-weight='700'%3E析%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --wood-dark:#3d2b1f;
+  --wood-mid:#7a5c3e;
+  --bg:#faf6ef;
+  --card:#ffffff;
+  --accent:#2e7d32;
+  --danger:#c0392b;
+  --line:#e6ddce;
+  --ink:#2a231c;
+  --muted:#8a7d6b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:"Noto Sans JP",sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{font-family:"Noto Serif JP",serif;font-weight:700;color:var(--wood-dark)}
+.wrap{max-width:1200px;margin:0 auto;padding:0 20px 60px}
+
+/* ===== header ===== */
+header{
+  background:var(--wood-dark);
+  color:#f5eee2;
+  border-bottom:4px solid var(--wood-mid);
+}
+.head-inner{
+  max-width:1200px;margin:0 auto;padding:16px 20px;
+  display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+}
+.head-title{display:flex;flex-direction:column}
+.head-title h1{color:#fff;font-size:22px;letter-spacing:.02em}
+.head-title .site{font-size:12px;color:#cbb89c;margin-top:2px}
+.head-right{margin-left:auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.updated{font-size:12px;color:#cbb89c}
+.ga-link{
+  font-size:12px;color:#f5eee2;text-decoration:none;border:1px solid #6c5238;
+  padding:5px 10px;border-radius:6px;background:rgba(255,255,255,.05);
+}
+.ga-link:hover{background:rgba(255,255,255,.14)}
+.badge{
+  font-size:12px;font-weight:700;cursor:pointer;user-select:none;
+  padding:5px 12px;border-radius:20px;display:inline-flex;align-items:center;gap:7px;
+  border:1px solid transparent;
+}
+.badge .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.badge.live{background:rgba(46,125,50,.18);color:#a8e0ab;border-color:#2e7d32}
+.badge.live .dot{background:#4caf50;box-shadow:0 0 0 3px rgba(76,175,80,.25)}
+.badge.loading{background:rgba(255,255,255,.1);color:#e8d9bf}
+.badge.loading .dot{background:#e6b800;animation:pulse 1s infinite}
+.badge.offline{background:rgba(192,57,43,.2);color:#f2b8b0;border-color:#c0392b}
+.badge.offline .dot{background:#e74c3c}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ===== range toggle ===== */
+.range-bar{display:flex;gap:8px;margin:24px 0 8px}
+.range-btn{
+  font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;
+  padding:8px 20px;border-radius:8px;border:1px solid var(--line);
+  background:var(--card);color:var(--wood-mid);transition:.15s;
+}
+.range-btn:hover{border-color:var(--wood-mid)}
+.range-btn.on{background:var(--wood-dark);color:#fff;border-color:var(--wood-dark)}
+
+/* ===== cards / grid ===== */
+.section{margin-top:34px}
+.section-title{font-size:17px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.section-title .em{font-size:15px;color:var(--wood-mid);font-family:"Noto Sans JP";font-weight:500}
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:20px;box-shadow:0 1px 3px rgba(61,43,31,.05);
+}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.kpi{
+  background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;
+  box-shadow:0 1px 3px rgba(61,43,31,.05);
+}
+.kpi .label{font-size:12.5px;color:var(--muted);font-weight:500}
+.kpi .val{font-size:30px;font-weight:700;color:var(--wood-dark);margin-top:4px;font-family:"Noto Serif JP"}
+.kpi .sub{font-size:11.5px;color:var(--muted);margin-top:3px}
+.delta{font-size:12.5px;font-weight:700;margin-top:6px;display:inline-flex;align-items:center;gap:3px}
+.delta.up{color:var(--accent)}
+.delta.down{color:var(--danger)}
+.delta.flat{color:var(--muted)}
+
+/* ===== chart ===== */
+.chart-box{position:relative;height:320px}
+.donut-box{position:relative;height:260px}
+
+/* ===== tables ===== */
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-size:12px;color:var(--muted);font-weight:700;background:#fbf8f2}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+tr.rank td:first-child{color:var(--wood-mid);font-weight:700;width:38px}
+tr.market{background:#fff8e8}
+tr.market td:nth-child(2){font-weight:700}
+.market-tag{font-size:11px;color:#b8860b;margin-left:5px}
+
+/* ===== two col ===== */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+
+/* ===== channel bars ===== */
+.bar-row{margin-bottom:12px}
+.bar-row .bl{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
+.bar-row .bl .nm{font-weight:500}
+.bar-row .bl .cnt{color:var(--muted);font-variant-numeric:tabular-nums}
+.bar-track{height:10px;background:#efe7d8;border-radius:6px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--wood-mid),var(--wood-dark));border-radius:6px}
+
+/* ===== highlights ===== */
+.hl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.hl-card{
+  background:linear-gradient(160deg,#fffdf8,#fbf3e4);
+  border:1px solid #e9dcc2;border-left:5px solid var(--accent);
+  border-radius:12px;padding:18px 20px;
+}
+.hl-card .hl-label{font-size:13px;color:var(--wood-mid);font-weight:500}
+.hl-card .hl-count{font-size:34px;font-weight:700;color:var(--wood-dark);font-family:"Noto Serif JP";line-height:1.1;margin-top:4px}
+.hl-card .hl-count small{font-size:14px;color:var(--muted);font-family:"Noto Sans JP";font-weight:500}
+
+details.events{margin-top:16px}
+details.events summary{
+  cursor:pointer;font-size:13.5px;color:var(--wood-mid);font-weight:500;
+  padding:8px 0;user-select:none;
+}
+details.events[open] summary{margin-bottom:8px}
+
+/* ===== login gate ===== */
+.gate{
+  min-height:80vh;display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.gate-card{
+  background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:36px 34px;width:100%;max-width:380px;box-shadow:0 6px 24px rgba(61,43,31,.1);
+}
+.gate-card h2{font-size:20px;text-align:center;margin-bottom:6px}
+.gate-card .g-sub{text-align:center;font-size:13px;color:var(--muted);margin-bottom:22px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12.5px;color:var(--wood-mid);margin-bottom:5px;font-weight:500}
+.field input[type=email],.field input[type=password]{
+  width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:8px;
+  font-family:inherit;font-size:14px;background:#fdfbf7;
+}
+.field input:focus{outline:none;border-color:var(--wood-mid)}
+.keep{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);margin:6px 0 18px}
+.btn-primary{
+  width:100%;padding:12px;border:none;border-radius:8px;background:var(--wood-dark);
+  color:#fff;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:.15s;
+}
+.btn-primary:hover{background:#4d3627}
+.gate-err{color:var(--danger);font-size:13px;text-align:center;margin-top:12px;min-height:18px}
+
+/* ===== states ===== */
+.center-state{
+  min-height:50vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;gap:16px;padding:40px 20px;
+}
+.spinner{
+  width:44px;height:44px;border:4px solid #e6ddce;border-top-color:var(--wood-mid);
+  border-radius:50%;animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.setup-card{
+  max-width:520px;background:var(--card);border:1px solid var(--line);
+  border-left:5px solid var(--wood-mid);border-radius:14px;padding:30px 32px;text-align:left;
+}
+.setup-card h3{font-size:18px;margin-bottom:10px}
+.setup-card p{font-size:14px;color:var(--ink);margin-bottom:8px}
+.setup-card .note{font-size:12.5px;color:var(--muted)}
+.btn-reload{
+  margin-top:18px;padding:10px 22px;border:1px solid var(--wood-mid);border-radius:8px;
+  background:#fff;color:var(--wood-dark);font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;
+}
+.btn-reload:hover{background:#f5eee2}
+.err-msg{font-size:14px;color:var(--danger);max-width:480px}
+.hidden{display:none!important}
+.foot{margin-top:40px;text-align:center;font-size:11.5px;color:var(--muted)}
+@media(max-width:900px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .two-col{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ========== LOGIN GATE ========== -->
+<div id="gate" class="gate hidden">
+  <form class="gate-card" id="gateForm" autocomplete="on">
+    <h2>HPアクセス分析</h2>
+    <div class="g-sub">林材木店 社内ツール</div>
+    <div class="field">
+      <label for="gEmail">メールアドレス</label>
+      <input type="email" id="gEmail" autocomplete="username" required>
+    </div>
+    <div class="field">
+      <label for="gPass">パスワード</label>
+      <input type="password" id="gPass" autocomplete="current-password" required>
+    </div>
+    <label class="keep"><input type="checkbox" id="gKeep" checked> この端末で保持する</label>
+    <button type="submit" class="btn-primary">ログイン</button>
+    <div class="gate-err" id="gateErr"></div>
+  </form>
+</div>
+
+<!-- ========== APP ========== -->
+<div id="app" class="hidden">
+  <header>
+    <div class="head-inner">
+      <div class="head-title">
+        <h1>HPアクセス分析</h1>
+        <span class="site">対象サイト: hayazai.com</span>
+      </div>
+      <div class="head-right">
+        <span class="updated" id="updated"></span>
+        <a class="ga-link" href="https://analytics.google.com/" target="_blank" rel="noopener">GA4管理画面 ↗</a>
+        <span class="badge loading" id="badge" title="クリックでログアウト"><span class="dot"></span><span id="badgeText">読込中</span></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- range -->
+    <div class="range-bar" id="rangeBar">
+      <button class="range-btn" data-r="7d">7日</button>
+      <button class="range-btn on" data-r="28d">28日</button>
+      <button class="range-btn" data-r="90d">90日</button>
+    </div>
+
+    <!-- loading / error / setup mount -->
+    <div id="stateMount"></div>
+
+    <!-- dashboard content -->
+    <div id="content" class="hidden">
+      <!-- KPI -->
+      <div class="kpi-grid" id="kpiGrid"></div>
+
+      <!-- trend -->
+      <div class="section">
+        <div class="section-title">アクセス推移 <span class="em" id="trendRangeLabel"></span></div>
+        <div class="card"><div class="chart-box"><canvas id="trendChart"></canvas></div></div>
+      </div>
+
+      <!-- pages -->
+      <div class="section">
+        <div class="section-title">人気ページ TOP</div>
+        <div class="card"><table id="pagesTable">
+          <thead><tr><th>順位</th><th>ページ</th><th class="num">表示数</th><th class="num">訪問者</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+
+      <!-- inflow -->
+      <div class="section">
+        <div class="section-title">流入元</div>
+        <div class="two-col">
+          <div class="card">
+            <h3 style="font-size:15px;margin-bottom:14px">チャネル</h3>
+            <div id="channelBars"></div>
+          </div>
+          <div class="card">
+            <h3 style="font-size:15px;margin-bottom:14px">参照元 / メディア</h3>
+            <table id="sourcesTable">
+              <thead><tr><th>参照元</th><th>メディア</th><th class="num">セッション</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- devices -->
+      <div class="section">
+        <div class="section-title">デバイス</div>
+        <div class="card" style="max-width:520px"><div class="donut-box"><canvas id="deviceChart"></canvas></div></div>
+      </div>
+
+      <!-- highlights + events -->
+      <div class="section">
+        <div class="section-title">施策の反応 <span class="em">市場向けHPの重点指標</span></div>
+        <div class="hl-grid" id="hlGrid"></div>
+        <details class="events">
+          <summary>すべてのイベントを表示</summary>
+          <div class="card">
+            <table id="eventsTable">
+              <thead><tr><th>イベント名</th><th class="num">回数</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </details>
+      </div>
+
+      <div class="foot" id="foot"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+/* ================= config ================= */
+const API_BASE="https://script.google.com/macros/s/AKfycbwLSuKaOBrF-v_TME8W3adWVKtZ84khRCuZ-qKvuT_sAxAcH4Ni0FiouV9xGYub7ZuSRQ/exec";
+
+/* ================= SSO auth ================= */
+const SSO_KEY="hayazai_sso_cred";
+const SSO_PEERS=["hayazai_board_cred","hayazai_seiso_cred","hayazai_rulebook_cred","hayazai_kaizen_cred","notify_creds_v1","seinodesk_cred","faxdesk_cred","orderdesk_cred","nippou_cred","hayazai_hpa_cred"];
+const CRED_KEY="hayazai_hpa_cred";
+function ssoFind_(){ const keys=[SSO_KEY].concat(SSO_PEERS); for(const k of keys){ try{ const v=JSON.parse(localStorage.getItem(k)||"null"); if(v){ const email=v.email||v.e, pass=v.pass||v.p; if(email&&pass) return {email:String(email),pass:String(pass)}; } }catch(e){} } return null; }
+function ssoWrite(email,pass){ try{ localStorage.setItem(SSO_KEY,JSON.stringify({email:email,pass:pass})); }catch(e){} }
+function ssoClear(){ try{ localStorage.removeItem(SSO_KEY); }catch(e){} }
+function creds(){ try{ const v=JSON.parse(localStorage.getItem(CRED_KEY)||sessionStorage.getItem(CRED_KEY)||"null"); if(v&&v.email&&v.pass) return v; }catch(e){} const s=ssoFind_(); if(s){ try{ localStorage.setItem(CRED_KEY,JSON.stringify(s)); }catch(e){} return s; } return {}; }
+function saveCreds(email,pass,keep){ const v=JSON.stringify({email,pass}); if(keep){ localStorage.setItem(CRED_KEY,v); sessionStorage.removeItem(CRED_KEY); } else { sessionStorage.setItem(CRED_KEY,v); localStorage.removeItem(CRED_KEY); } ssoWrite(email,pass); }
+function clearCreds(){ localStorage.removeItem(CRED_KEY); sessionStorage.removeItem(CRED_KEY); ssoClear(); }
+function authQS(){ const c=creds(); return "email="+encodeURIComponent(c.email||"")+"&pass="+encodeURIComponent(c.pass||""); }
+
+/* ================= helpers ================= */
+const $=id=>document.getElementById(id);
+const fmt=n=>(n==null||isNaN(n))?"—":Number(n).toLocaleString("ja-JP");
+function secToJa(s){
+  s=Math.round(s||0);
+  const m=Math.floor(s/60), r=s%60;
+  if(m<=0) return r+"秒";
+  return m+"分"+(r>0?r+"秒":"");
+}
+const PAGE_LABELS={
+  "/":"トップ","/index.html":"トップ","/products.html":"商品一覧","/product.html":"商品詳細",
+  "/markets.html":"取扱店一覧","/dealer.html":"取扱店募集","/order.html":"見積もり依頼",
+  "/simulator.html":"必要量シミュレーター","/sample.html":"無料サンプル請求","/contact.html":"お問い合わせ",
+  "/faq.html":"よくある質問","/gallery.html":"施工事例","/shipping.html":"送料案内",
+  "/download.html":"取扱店様専用DL","/company.html":"会社概要","/business.html":"法人取引","/blog.html":"ブログ一覧"
+};
+const MARKET_PATHS={"/markets.html":1,"/dealer.html":1};
+function pageLabel(p){
+  if(!p) return "(不明)";
+  if(PAGE_LABELS[p]!==undefined) return PAGE_LABELS[p];
+  if(p.indexOf("/blog/")===0) return "ブログ記事"+p.slice(5);
+  return p;
+}
+const CHANNEL_JA={
+  "Organic Search":"検索（自然流入）","Direct":"直接アクセス","Referral":"他サイト経由",
+  "Social":"SNS","Paid Search":"検索広告","Email":"メール","Organic Social":"SNS（自然）",
+  "Display":"ディスプレイ広告","Unassigned":"分類なし"
+};
+function channelJa(n){ return CHANNEL_JA[n]?(n+"（"+CHANNEL_JA[n]+"）"):n; }
+const DEVICE_JA={desktop:"PC",mobile:"スマホ",tablet:"タブレット"};
+function deviceJa(n){ return DEVICE_JA[n]||n; }
+function srcJa(v){ return (v==="(direct)"||v==="(none)"||!v)?"直接アクセス":v; }
+
+/* ================= fetch w/ timeout+retry ================= */
+async function apiGet(range){
+  const url=API_BASE+"?api=dashboard&range="+encodeURIComponent(range)+"&"+authQS();
+  let lastErr=null;
+  for(let attempt=0;attempt<3;attempt++){
+    const ms=attempt===0?25000:12000;
+    const ctrl=new AbortController();
+    const timer=setTimeout(()=>ctrl.abort(),ms);
+    try{
+      const res=await fetch(url,{signal:ctrl.signal,redirect:"follow"});
+      clearTimeout(timer);
+      const text=await res.text();
+      const t=text.trim();
+      if(t.charAt(0)!=="{") throw new Error("bad-response");
+      return JSON.parse(t);
+    }catch(e){
+      clearTimeout(timer);
+      lastErr=e;
+    }
+  }
+  throw lastErr||new Error("network");
+}
+
+/* ================= state ================= */
+let curRange="28d";
+let trendChart=null, deviceChart=null;
+
+function setBadge(kind,text){
+  const b=$("badge");
+  b.className="badge "+kind;
+  $("badgeText").textContent=text;
+}
+function showMount(html){ $("stateMount").innerHTML=html; $("content").classList.add("hidden"); }
+function clearMount(){ $("stateMount").innerHTML=""; }
+
+function showLoading(){
+  setBadge("loading","読込中");
+  showMount('<div class="center-state"><div class="spinner"></div><div style="color:var(--muted);font-size:14px">データを読み込んでいます…</div></div>');
+}
+function showError(msg){
+  setBadge("offline","オフライン");
+  showMount(
+    '<div class="center-state">'+
+    '<div class="err-msg">'+ (msg||"データを取得できませんでした。") +'</div>'+
+    '<button class="btn-reload" onclick="load()">再読み込み</button>'+
+    '</div>');
+}
+function showSetup(){
+  setBadge("offline","未接続");
+  showMount(
+    '<div class="center-state"><div class="setup-card">'+
+    '<h3>初回セットアップが必要です</h3>'+
+    '<p>GAS側でGA4連携（アクセス権限の承認）が完了すると、ここにアクセス分析が表示されます。</p>'+
+    '<p class="note">承認は管理者側の作業です。しばらくお待ちいただくか、担当者にご連絡ください。設定完了後に「再読み込み」を押すと表示されます。</p>'+
+    '<button class="btn-reload" onclick="load()">再読み込み</button>'+
+    '</div></div>');
+}
+
+/* ================= render ================= */
+function kpiCard(label,val,sub,delta){
+  let d="";
+  if(delta!==undefined && delta!==null && delta!==false){
+    const p=delta;
+    if(p===null){ d='<div class="delta flat">— 新規</div>'; }
+    else {
+      const up=p>=0;
+      d='<div class="delta '+(up?"up":"down")+'">'+(up?"↑":"↓")+' '+Math.abs(p).toFixed(1)+'%</div>';
+    }
+  }
+  return '<div class="kpi"><div class="label">'+label+'</div>'+
+    '<div class="val">'+val+'</div>'+
+    (sub?'<div class="sub">'+sub+'</div>':'')+
+    d+'</div>';
+}
+
+function render(data){
+  clearMount();
+  $("content").classList.remove("hidden");
+  setBadge("live","ライブ");
+  $("updated").textContent = data.updated ? ("更新 "+data.updated) : "";
+  const rl={"7d":"直近7日間","28d":"直近28日間","90d":"直近90日間"}[data.range]||"";
+  $("trendRangeLabel").textContent=rl;
+
+  /* KPI */
+  const s=data.summary||{};
+  const u=s.users||{}, se=s.sessions||{}, v=s.views||{};
+  const kg=[
+    kpiCard("訪問者", fmt(u.cur), "前期 "+fmt(u.prev), (u.pct===undefined?false:u.pct)),
+    kpiCard("セッション", fmt(se.cur), "前期 "+fmt(se.prev), (se.pct===undefined?false:se.pct)),
+    kpiCard("ページ表示", fmt(v.cur), "前期 "+fmt(v.prev), (v.pct===undefined?false:v.pct)),
+    kpiCard("エンゲージメント率", (s.engagementRate!=null?Number(s.engagementRate).toFixed(1)+"%":"—"), "訪問の質", false),
+    kpiCard("平均滞在", (s.avgSessionSec!=null?secToJa(s.avgSessionSec):"—"), "1セッションあたり", false)
+  ].join("");
+  $("kpiGrid").innerHTML=kg;
+
+  /* trend chart */
+  renderTrend(data.trend||[]);
+
+  /* pages */
+  const pb=$("pagesTable").querySelector("tbody");
+  pb.innerHTML=(data.pages||[]).map((p,i)=>{
+    const isMkt=MARKET_PATHS[p.path];
+    return '<tr class="rank'+(isMkt?" market":"")+'">'+
+      '<td>'+(i+1)+'</td>'+
+      '<td>'+ (isMkt?'🏬 ':'') + pageLabel(p.path) + (isMkt?'<span class="market-tag">市場向け</span>':'') +
+        '<div style="font-size:11px;color:var(--muted)">'+p.path+'</div></td>'+
+      '<td class="num">'+fmt(p.views)+'</td>'+
+      '<td class="num">'+fmt(p.users)+'</td></tr>';
+  }).join("") || '<tr><td colspan="4" style="color:var(--muted)">データなし</td></tr>';
+
+  /* channels */
+  const chs=data.channels||[];
+  const chMax=Math.max(1,...chs.map(c=>c.sessions||0));
+  $("channelBars").innerHTML=chs.map(c=>{
+    const pct=Math.round((c.sessions||0)/chMax*100);
+    return '<div class="bar-row"><div class="bl"><span class="nm">'+channelJa(c.name)+'</span>'+
+      '<span class="cnt">'+fmt(c.sessions)+'</span></div>'+
+      '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div></div>';
+  }).join("") || '<div style="color:var(--muted);font-size:13px">データなし</div>';
+
+  /* sources */
+  const sb=$("sourcesTable").querySelector("tbody");
+  sb.innerHTML=(data.sources||[]).map(x=>
+    '<tr><td>'+srcJa(x.source)+'</td><td>'+srcJa(x.medium)+'</td><td class="num">'+fmt(x.sessions)+'</td></tr>'
+  ).join("") || '<tr><td colspan="3" style="color:var(--muted)">データなし</td></tr>';
+
+  /* devices */
+  renderDevices(data.devices||[]);
+
+  /* highlights */
+  const hls=data.highlights||[];
+  $("hlGrid").innerHTML=hls.length?hls.map(h=>
+    '<div class="hl-card"><div class="hl-label">'+(h.label||h.name)+'</div>'+
+    '<div class="hl-count">'+fmt(h.count)+'<small> 件</small></div></div>'
+  ).join(""):'<div style="color:var(--muted);font-size:13px;padding:6px">計測中のイベントはまだありません。</div>';
+
+  /* events */
+  const eb=$("eventsTable").querySelector("tbody");
+  eb.innerHTML=(data.events||[]).map(e=>
+    '<tr><td>'+e.name+'</td><td class="num">'+fmt(e.count)+'</td></tr>'
+  ).join("") || '<tr><td colspan="2" style="color:var(--muted)">データなし</td></tr>';
+
+  /* footer */
+  $("foot").textContent = data.measurementId ? ("計測ID: "+data.measurementId+" ・ 対象 hayazai.com") : "";
+}
+
+function renderTrend(trend){
+  const labels=trend.map(t=>{ const d=t.date.split("-"); return d.length===3?(parseInt(d[1],10)+"/"+parseInt(d[2],10)):t.date; });
+  const mk=(arr,color,label)=>({label,data:arr,borderColor:color,backgroundColor:color+"22",tension:.3,borderWidth:2,pointRadius:trend.length>40?0:2.5,pointHoverRadius:4,fill:false});
+  const cfg={
+    type:"line",
+    data:{labels,datasets:[
+      mk(trend.map(t=>t.users),"#7a5c3e","訪問者"),
+      mk(trend.map(t=>t.sessions),"#2e7d32","セッション"),
+      mk(trend.map(t=>t.views),"#c98a3a","ページ表示")
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:"index",intersect:false},
+      plugins:{legend:{position:"top",labels:{font:{family:"'Noto Sans JP'"},usePointStyle:true,boxWidth:8}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+": "+fmt(c.parsed.y)}}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{family:"'Noto Sans JP'",size:11},maxRotation:0,autoSkip:true,maxTicksLimit:14}},
+        y:{beginAtZero:true,grid:{color:"#efe7d8"},ticks:{font:{family:"'Noto Sans JP'",size:11},callback:v=>fmt(v)}}
+      }
+    }
+  };
+  if(trendChart) trendChart.destroy();
+  trendChart=new Chart($("trendChart"),cfg);
+}
+
+function renderDevices(devices){
+  const colors=["#3d2b1f","#2e7d32","#c98a3a","#7a5c3e","#b0906b"];
+  const cfg={
+    type:"doughnut",
+    data:{labels:devices.map(d=>deviceJa(d.name)),
+      datasets:[{data:devices.map(d=>d.sessions),backgroundColor:colors,borderColor:"#fff",borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:"62%",
+      plugins:{legend:{position:"right",labels:{font:{family:"'Noto Sans JP'"},usePointStyle:true,boxWidth:9}},
+        tooltip:{callbacks:{label:c=>{const tot=c.dataset.data.reduce((a,b)=>a+b,0)||1;const p=(c.parsed/tot*100).toFixed(1);return c.label+": "+fmt(c.parsed)+" ("+p+"%)";}}}}}
+  };
+  if(deviceChart) deviceChart.destroy();
+  deviceChart=new Chart($("deviceChart"),cfg);
+}
+
+/* ================= load ================= */
+async function load(){
+  showLoading();
+  let data;
+  try{
+    data=await apiGet(curRange);
+  }catch(e){
+    showError("サーバーに接続できませんでした。通信環境を確認して再読み込みしてください。");
+    return;
+  }
+  if(data && data.ok===false){
+    const err=(data.error||"").toString();
+    if(err==="unauthorized"){ // back to login
+      clearCreds();
+      showGate("メールまたはパスワードが違います");
+      return;
+    }
+    // setup-waiting states (permission / property not set)
+    if(/GA4_PROPERTY_ID|未設定|拒否|permission|denied|access/i.test(err)){
+      showSetup();
+      return;
+    }
+    showError("エラー: "+err);
+    return;
+  }
+  if(!data || !data.summary){
+    showError("データの形式が正しくありません。時間をおいて再読み込みしてください。");
+    return;
+  }
+  render(data);
+}
+
+/* ================= range toggle ================= */
+$("rangeBar").addEventListener("click",e=>{
+  const btn=e.target.closest(".range-btn");
+  if(!btn) return;
+  const r=btn.dataset.r;
+  if(r===curRange) return;
+  curRange=r;
+  document.querySelectorAll(".range-btn").forEach(b=>b.classList.toggle("on",b.dataset.r===r));
+  load();
+});
+
+/* ================= logout via badge ================= */
+$("badge").addEventListener("click",()=>{
+  if(confirm("ログアウトしますか？")){ clearCreds(); location.reload(); }
+});
+
+/* ================= login gate ================= */
+function showGate(errMsg){
+  $("app").classList.add("hidden");
+  $("gate").classList.remove("hidden");
+  $("gateErr").textContent=errMsg||"";
+  const c=creds();
+  if(c.email) $("gEmail").value=c.email;
+}
+$("gateForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const email=$("gEmail").value.trim();
+  const pass=$("gPass").value;
+  if(!email||!pass){ $("gateErr").textContent="メールとパスワードを入力してください"; return; }
+  saveCreds(email,pass,$("gKeep").checked);
+  $("gate").classList.add("hidden");
+  $("app").classList.remove("hidden");
+  load();
+});
+
+/* ================= boot ================= */
+(function boot(){
+  const c=creds();
+  if(c && c.email && c.pass){
+    $("gate").classList.add("hidden");
+    $("app").classList.remove("hidden");
+    load();
+  }else{
+    showGate("");
+  }
+})();
+</script>
+</body>
+</html>
