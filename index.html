@@ -119,7 +119,7 @@ tr:hover td{background:#faf6ef}
   <div class="cards" id="cards"></div>
 
   <section>
-    <h2>📈 日別の訪問 <span class="hint">棒=PV / 折れ線=訪問者数</span></h2>
+    <h2>📈 日別の訪問 <span class="hint">棒=PV / 折れ線=訪問者数（2026-09-01より前の薄い棒はGA4の過去データ）</span></h2>
     <div class="chart" id="dailyChart"><div class="empty"><div class="spin"></div>読み込み中…</div></div>
   </section>
 
@@ -160,7 +160,7 @@ tr:hover td{background:#faf6ef}
     <div id="aiLog"><div class="empty">読み込み中…</div></div>
   </section>
 
-  <div class="note">計測はhayazai.com自前（Cookie不使用・IPは匿名化）。GA4は <a href="https://analytics.google.com/" target="_blank" rel="noopener">GA4画面</a> で併用可。毎朝のLINE「HP日次アクセスレポ」と同じデータ源です。</div>
+  <div class="note">計測はhayazai.com自前（Cookie不使用・IPは匿名化）。2026-09-01より前の日別数字はGA4から取込（離脱率・滞在・AIログ等の詳細は9/1以降のみ）。GA4は <a href="https://analytics.google.com/" target="_blank" rel="noopener">GA4画面</a> で併用可。毎朝のLINE「HP日次アクセスレポ」と同じデータ源。<b>自分のアクセスを集計から除外</b>するには各端末で <a href="https://hayazai.com/keisoku/me.html" target="_blank" rel="noopener">自分除外ページ</a> を開いてONに。</div>
 </div>
 
 <div id="gate">
@@ -331,7 +331,7 @@ function drawDaily(daily){
   daily.forEach((x,i)=>{
     const cx=pad+i*((W-pad*2)/daily.length);
     const bh=Math.round(x.pv/maxPv*(H-pad*2));
-    bars+='<rect x="'+cx+'" y="'+(H-pad-bh)+'" width="'+bw+'" height="'+bh+'" rx="2" fill="#c9b48e"><title>'+fmtMD(x.d)+"  PV:"+x.pv+" 訪問者:"+x.vs+"</title></rect>";
+    bars+='<rect x="'+cx+'" y="'+(H-pad-bh)+'" width="'+bw+'" height="'+bh+'" rx="2" fill="'+(x.g?'#e2d6bf':'#c9b48e')+'"><title>'+fmtMD(x.d)+"  PV:"+x.pv+" 訪問者:"+x.vs+(x.g?"（GA4過去分）":"")+"</title></rect>";
     const vy=H-pad-Math.round(x.vs/maxPv*(H-pad*2));
     line+=(i===0?"M":"L")+(cx+bw/2)+" "+vy+" ";
     const every=daily.length>40?7:(daily.length>10?4:1);
