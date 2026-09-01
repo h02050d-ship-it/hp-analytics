@@ -287,7 +287,7 @@ function render(){
   $("pagesTbl").innerHTML="<tr><th>ページ</th><th>PV</th><th></th><th>入口</th><th>離脱率</th><th>直帰</th><th>平均滞在</th><th>読了</th></tr>"+
     d.pages.slice(0,20).map(p=>{
       const exPill=p.pv>=5?('<span class="pill '+(p.exRate>=60?"bad":p.exRate>=40?"warn":"ok")+'">'+p.exRate+"%</span>"):(p.exRate+"%");
-      return "<tr><td class='pg' title='"+esc(p.p)+"'>"+esc(p.p)+"</td><td>"+p.pv+"</td>"+
+      return "<tr><td class='pg' title='"+esc(p.p)+"'>"+esc(p.name||p.p)+"</td><td>"+p.pv+"</td>"+
       "<td><div class='bar-bg'><div class='bar-fg' style='width:"+Math.round(p.pv/maxPv*100)+"%'></div></div></td>"+
       "<td>"+p.en+"</td><td>"+exPill+"</td><td>"+(p.en>0?p.bounce+"%":"–")+"</td><td>"+(p.dur?fmtDur(p.dur):"–")+"</td><td>"+(p.sd?p.sd+"%":"–")+"</td></tr>";
     }).join("");
@@ -357,12 +357,13 @@ function drawHours(hours){
 function renderInsights(d){
   const out=[];
   const pages=d.pages||[];
+  const nm=p=>p.name||p.p;
   const exBad=pages.filter(p=>p.pv>=8&&p.exRate>=55&&!/complete|contact|order_complete/.test(p.p)&&p.p!=="/index.html").sort((a,b)=>b.exRate-a.exRate)[0];
-  if(exBad) out.push("<li><b>"+esc(exBad.p)+"</b> の離脱率が <b>"+exBad.exRate+"%</b> と高め。<div class='why'>ここでサイトを閉じる人が多い＝次のページへの導線（商品一覧・問い合わせボタン）を目立たせる候補です。</div></li>");
+  if(exBad) out.push("<li><b>"+esc(nm(exBad))+"</b> の離脱率が <b>"+exBad.exRate+"%</b> と高め。<div class='why'>ここでサイトを閉じる人が多い＝次のページへの導線（商品一覧・問い合わせボタン）を目立たせる候補です。</div></li>");
   const sdBad=pages.filter(p=>p.pv>=8&&p.sd>0&&p.sd<=35).sort((a,b)=>a.sd-b.sd)[0];
-  if(sdBad) out.push("<li><b>"+esc(sdBad.p)+"</b> は平均スクロールが <b>"+sdBad.sd+"%</b>＝下まで読まれていません。<div class='why'>大事な情報（価格・CTA）はページ上部へ寄せる候補です。</div></li>");
+  if(sdBad) out.push("<li><b>"+esc(nm(sdBad))+"</b> は平均スクロールが <b>"+sdBad.sd+"%</b>＝下まで読まれていません。<div class='why'>大事な情報（価格・CTA）はページ上部へ寄せる候補です。</div></li>");
   const bBad=pages.filter(p=>p.en>=5&&p.bounce>=70).sort((a,b)=>b.bounce-a.bounce)[0];
-  if(bBad) out.push("<li>入口ページ <b>"+esc(bBad.p)+"</b> の直帰率が <b>"+bBad.bounce+"%</b>。<div class='why'>検索から来た人の期待と中身がズレている可能性。冒頭に関連リンクを足す候補です。</div></li>");
+  if(bBad) out.push("<li>入口ページ <b>"+esc(nm(bBad))+"</b> の直帰率が <b>"+bBad.bounce+"%</b>。<div class='why'>検索から来た人の期待と中身がズレている可能性。冒頭に関連リンクを足す候補です。</div></li>");
   const F=d.funnel||{};
   if((F.cart||0)>0&&(F.order||0)===0) out.push("<li>カートまで来て<b>注文フォームに進んだ人が0</b>です。<div class='why'>カートページの送料表示・ボタン位置を確認する候補です。</div></li>");
   const aiN=(d.ai||[]).length;
