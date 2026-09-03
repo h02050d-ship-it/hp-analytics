@@ -209,12 +209,12 @@
     {
       "id": "K008",
       "date": "2026-09-03",
-      "title": "【要判断】アクセス分析APIの認証復旧（Secrets更新）",
+      "title": "アクセス分析APIの認証復旧（Secrets更新）",
       "change": "GitHub Secrets の ANALYTICS_AUTH_PASS を共通パスへ、ANALYTICS_AUTH_EMAIL を h02050d@gmail.com へ更新し、deploy-xserver を再実行して keisoku/config.php を再生成する",
       "files": [
         "GitHub Secrets（リポジトリ hayazai_website）"
       ],
-      "commit": null,
+      "commit": "gh secret set + deploy-xserver 手動実行(9/3 14:45)",
       "metric": {
         "key": "api.auth",
         "label": "api.php が 200 を返すか"
@@ -225,15 +225,13 @@
         "note": "email/pass の全組合せで403。config.php自体は存在（欠落なら503）"
       },
       "expect": "ダッシュボードのログインと週次改善ループの両方が復旧する",
-      "status": "proposal",
-      "result": null,
-      "next": "復旧後にK001〜K006の効果判定を再開（導入前値は9/1〜9/3のまま有効）"
+      "status": "done",
+      "result": {
+        "period": "2026-09-03",
+        "value": 200,
+        "note": "原因=9/1の共通パス変更にSecretsが未追随（旧パスのままだった）。ANALYTICS_AUTH_PASS/EMAILを更新→再デプロイ→api.php 200確認"
+      },
+      "next": "共通パスを次に変えるときは gh secret set ANALYTICS_AUTH_PASS も同時に"
     }
-  ],
-  "blocked": {
-    "since": "2026-09-03",
-    "what": "keisoku/api.php が 403 auth を返し、7日/28日データが取得できない",
-    "cause": "GitHub Secrets ANALYTICS_AUTH_PASS（またはANALYTICS_AUTH_EMAIL）が9/1の共通パス変更(momiji-7264-kaze)に追随していない。デプロイは9/3 01:04に成功しconfig.phpは生成済（503ではなく403のため値の不一致）",
-    "fix": "gh secret set ANALYTICS_AUTH_PASS / ANALYTICS_AUTH_EMAIL → deploy-xserver を再実行"
-  }
+  ]
 }
