@@ -77,8 +77,9 @@ tr:hover td{background:#faf6ef}
 /* kaizen loop */
 .kz{width:100%;border-collapse:collapse;font-size:12.5px}
 .kz th{font-size:11px;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:2px solid var(--line);white-space:nowrap}
-.kz td{padding:8px 8px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.55}
-.kz td.t{font-weight:700;color:var(--wood-dark);min-width:180px}
+.kz th,.kz td{text-align:left}
+.kz td{padding:8px 8px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.55;white-space:normal}
+.kz td.t{font-weight:700;color:var(--wood-dark);min-width:240px;max-width:420px}
 .kz td.t small{display:block;font-weight:400;color:var(--muted);font-size:11px;margin-top:2px}
 .kz .st{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap}
 .kz .st.measuring{background:#fdf3dd;color:var(--warn)}
@@ -87,7 +88,7 @@ tr:hover td{background:#faf6ef}
 .kz .st.rolled_back{background:#eee;color:#666}
 .kz .st.proposal{background:#e8eef8;color:var(--info)}
 .kz .st.done{background:#e9f4ea;color:var(--accent)}
-.kz .num{white-space:nowrap;text-align:right}
+.kz td.num,.kz th.num{white-space:nowrap;text-align:right}
 .kzloop{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
 .kzloop span{background:#faf6ef;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:11.5px;color:var(--wood-dark);font-weight:700}
 .kzloop span::after{content:"→";margin-left:8px;color:var(--muted)}
