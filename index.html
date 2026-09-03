@@ -63,6 +63,17 @@ tr:hover td{background:#faf6ef}
 /* chart */
 .chart{width:100%;overflow-x:auto}
 .chart svg{display:block}
+.hb rect{fill:#3d2b1f;fill-opacity:0;cursor:crosshair}
+.hb:hover rect{fill-opacity:.07}
+.hb circle{opacity:0}
+.hb:hover circle{opacity:1}
+#ttip{position:fixed;left:0;top:0;z-index:9999;pointer-events:none;opacity:0;transition:opacity .08s;
+  transform:translate(-50%,-100%);background:rgba(45,32,22,.96);color:#fff;border-radius:8px;
+  padding:7px 11px;font-size:12.5px;line-height:1.55;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+#ttip.on{opacity:1}
+#ttip b{display:block;font-size:13px;font-weight:700;margin-bottom:2px;color:#f2e7d3}
+#ttip i{font-style:normal;font-weight:700;font-size:13.5px}
+#ttip u{display:block;text-decoration:none;font-size:11px;color:#c9b48e;margin-top:2px}
 /* funnel */
 .funnel{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap}
 .fstep{flex:1;min-width:120px;background:#faf6ef;border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-align:center;position:relative}
@@ -211,6 +222,36 @@ const $=id=>document.getElementById(id);
 function esc(s){ return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
 function fmtDur(s){ s=+s||0; if(s<60) return s+"秒"; return Math.floor(s/60)+"分"+(s%60?String(s%60)+"秒":""); }
 function fmtMD(d){ const p=d.split("-"); return (+p[1])+"/"+(+p[2]); }
+function fmtW(d){ const p=d.split("-"); return "日月火水木金土"[new Date(+p[0],+p[1]-1,+p[2]).getDay()]; }
+/* ===== ホバーツールチップ ===== */
+function tipEl(){
+  let t=document.getElementById("ttip");
+  if(!t){ t=document.createElement("div"); t.id="ttip"; document.body.appendChild(t); }
+  return t;
+}
+function posTip(t,e){
+  const w=t.offsetWidth,h=t.offsetHeight;
+  let x=e.clientX, y=e.clientY-12;
+  x=Math.max(w/2+6, Math.min(window.innerWidth-w/2-6, x));
+  if(y-h<6) y=e.clientY+h+20;
+  t.style.left=x+"px"; t.style.top=y+"px";
+}
+function bindTip(id,tips){
+  const box=$(id); if(!box) return;
+  const svg=box.querySelector("svg"); if(!svg) return;
+  const t=tipEl();
+  const hide=()=>t.classList.remove("on");
+  svg.addEventListener("mousemove",e=>{
+    const g=e.target.closest && e.target.closest("[data-i]");
+    if(!g){ hide(); return; }
+    t.innerHTML=tips[+g.getAttribute("data-i")]||"";
+    t.classList.add("on");
+    posTip(t,e);
+  });
+  svg.addEventListener("mouseleave",hide);
+  box.addEventListener("scroll",hide);
+  window.addEventListener("scroll",hide,{passive:true});
+}
 function deltaSub(cur,prev,unit){
   if(!prev) return '<span class="sub">前期間データなし</span>';
   const diff=cur-prev, pct=Math.round(diff/prev*100);
@@ -326,31 +367,42 @@ function render(){
 function drawDaily(daily){
   const W=Math.max(560,daily.length*18), H=180, pad=28;
   const maxPv=Math.max(5,...daily.map(x=>x.pv));
-  const bw=Math.max(6,Math.floor((W-pad*2)/daily.length)-4);
-  let bars="",line="",labels="";
+  const step=(W-pad*2)/daily.length;
+  const bw=Math.max(6,Math.floor(step)-4);
+  let bars="",line="",labels="",bands="";
+  const tips=[];
   daily.forEach((x,i)=>{
-    const cx=pad+i*((W-pad*2)/daily.length);
+    const cx=pad+i*step;
     const bh=Math.round(x.pv/maxPv*(H-pad*2));
-    bars+='<rect x="'+cx+'" y="'+(H-pad-bh)+'" width="'+bw+'" height="'+bh+'" rx="2" fill="'+(x.g?'#e2d6bf':'#c9b48e')+'"><title>'+fmtMD(x.d)+"  PV:"+x.pv+" 訪問者:"+x.vs+(x.g?"（GA4過去分）":"")+"</title></rect>";
+    bars+='<rect x="'+cx+'" y="'+(H-pad-bh)+'" width="'+bw+'" height="'+bh+'" rx="2" fill="'+(x.g?'#e2d6bf':'#c9b48e')+'"/>';
     const vy=H-pad-Math.round(x.vs/maxPv*(H-pad*2));
     line+=(i===0?"M":"L")+(cx+bw/2)+" "+vy+" ";
     const every=daily.length>40?7:(daily.length>10?4:1);
     if(i%every===0) labels+='<text x="'+(cx+bw/2)+'" y="'+(H-8)+'" font-size="10" fill="#8a7d6b" text-anchor="middle">'+fmtMD(x.d)+"</text>";
+    tips.push("<b>"+fmtMD(x.d)+"（"+fmtW(x.d)+"）</b>PV <i>"+x.pv+"</i>　訪問者 <i>"+x.vs+"</i>"+(x.g?"<u>GA4過去分</u>":""));
+    bands+='<g class="hb"><rect x="'+cx+'" y="4" width="'+step+'" height="'+(H-pad-4)+'" data-i="'+i+'"/><circle cx="'+(cx+bw/2)+'" cy="'+vy+'" r="3.5" fill="#2e7d32" stroke="#fff" stroke-width="1.5"/></g>';
   });
-  $("dailyChart").innerHTML='<svg viewBox="0 0 '+W+" "+H+'" width="'+W+'" height="'+H+'">'+bars+'<path d="'+line+'" fill="none" stroke="#2e7d32" stroke-width="2"/>'+labels+"</svg>";
+  $("dailyChart").innerHTML='<svg viewBox="0 0 '+W+" "+H+'" width="'+W+'" height="'+H+'">'+bars+'<path d="'+line+'" fill="none" stroke="#2e7d32" stroke-width="2"/>'+labels+bands+"</svg>";
+  bindTip("dailyChart",tips);
 }
 function drawHours(hours){
   const W=560,H=140,pad=24;
   const max=Math.max(3,...hours);
-  const bw=Math.floor((W-pad*2)/24)-3;
-  let s="";
+  const step=(W-pad*2)/24;
+  const bw=Math.floor(step)-3;
+  const total=hours.reduce((a,b)=>a+b,0)||1;
+  let s="",bands="";
+  const tips=[];
   hours.forEach((v,h)=>{
-    const x=pad+h*((W-pad*2)/24);
+    const x=pad+h*step;
     const bh=Math.round(v/max*(H-pad*2));
-    s+='<rect x="'+x+'" y="'+(H-pad-bh)+'" width="'+bw+'" height="'+bh+'" rx="2" fill="#7a5c3e"><title>'+h+"時: "+v+"PV</title></rect>";
+    s+='<rect x="'+x+'" y="'+(H-pad-bh)+'" width="'+bw+'" height="'+bh+'" rx="2" fill="#7a5c3e"/>';
     if(h%3===0) s+='<text x="'+(x+bw/2)+'" y="'+(H-6)+'" font-size="10" fill="#8a7d6b" text-anchor="middle">'+h+"</text>";
+    tips.push("<b>"+h+"時台</b>PV <i>"+v+"</i>　全体の "+(v/total*100).toFixed(1)+"%");
+    bands+='<g class="hb"><rect x="'+x+'" y="4" width="'+step+'" height="'+(H-pad-4)+'" data-i="'+h+'"/></g>';
   });
-  $("hoursChart").innerHTML='<svg viewBox="0 0 '+W+" "+H+'" width="'+W+'" height="'+H+'">'+s+"</svg>";
+  $("hoursChart").innerHTML='<svg viewBox="0 0 '+W+" "+H+'" width="'+W+'" height="'+H+'">'+s+bands+"</svg>";
+  bindTip("hoursChart",tips);
 }
 
 /* ===== 気づき自動抽出 ===== */
