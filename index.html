@@ -157,7 +157,7 @@ tr:hover td{background:#faf6ef}
   </div>
 
   <section>
-    <h2>🛒 購入ファネル <span class="hint">期間内にその段階まで到達したセッション数</span></h2>
+    <h2>🛒 購入ファネル <span class="hint">期間内にその段階まで到達したセッション数（HPは市場・取扱店経由が基本導線）</span></h2>
     <div class="funnel" id="funnel"></div>
   </section>
 
@@ -344,7 +344,7 @@ function render(){
   drawHours(d.hours);
 
   /* ファネル */
-  const F=d.funnel, steps=[["top","トップ"],["products","商品一覧"],["product","商品詳細"],["cart","カート"],["order","注文フォーム"],["complete","注文完了"]];
+  const F=d.funnel, steps=[["top","トップ"],["products","商品・価格"],["markets","取扱店を探す"],["sample","サンプル請求"],["contact","お問い合わせ"],["complete","送信完了"]];
   $("funnel").innerHTML=steps.map((s,i)=>{
     const n=F[s[0]]||0, prevN=i>0?(F[steps[i-1][0]]||0):0;
     const cv=i>0&&prevN>0?Math.round(n/prevN*100)+"%":"";
@@ -417,7 +417,9 @@ function renderInsights(d){
   const bBad=pages.filter(p=>p.en>=5&&p.bounce>=70).sort((a,b)=>b.bounce-a.bounce)[0];
   if(bBad) out.push("<li>入口ページ <b>"+esc(nm(bBad))+"</b> の直帰率が <b>"+bBad.bounce+"%</b>。<div class='why'>検索から来た人の期待と中身がズレている可能性。冒頭に関連リンクを足す候補です。</div></li>");
   const F=d.funnel||{};
-  if((F.cart||0)>0&&(F.order||0)===0) out.push("<li>カートまで来て<b>注文フォームに進んだ人が0</b>です。<div class='why'>カートページの送料表示・ボタン位置を確認する候補です。</div></li>");
+  if((F.products||0)>=5&&(F.markets||0)===0&&(F.sample||0)===0) out.push("<li>商品・価格を見た<b>"+F.products+"セッション</b>のうち、取扱店探し・サンプル請求に進んだ人が<b>0</b>です。<div class='why'>価格表の直下・ブログ記事中のCTA（サンプル/取扱店）が効いているか確認する候補です。</div></li>");
+  const faxRefs=(d.refs||[]).filter(r=>String(r.k).indexOf("FAX/QR")===0);
+  if(faxRefs.length) out.push("<li>FAX・QR経由の来訪 <b>"+faxRefs.map(r=>r.k.replace("FAX/QR:","")+" "+r.c+"件").join("・")+"</b>。<div class='why'>hayazai.com/fax（材木店・市場向け）／hayazai.com/koumuten（工務店向け）の着地。送付先リストと突き合わせて電話フォローの優先順位に。</div></li>");
   const aiN=(d.ai||[]).length;
   if(aiN>0) out.push("<li>AIチャットに <b>"+aiN+"件</b> の質問。<div class='why'>下のログで誤答・「わかりかねます」を確認→knowledge.txtの更新候補です。よくある質問はFAQページへの追加も。</div></li>");
   const aiRef=(d.refs||[]).find(r=>r.k==="AI経由");
