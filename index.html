@@ -74,6 +74,24 @@ tr:hover td{background:#faf6ef}
 #ttip b{display:block;font-size:13px;font-weight:700;margin-bottom:2px;color:#f2e7d3}
 #ttip i{font-style:normal;font-weight:700;font-size:13.5px}
 #ttip u{display:block;text-decoration:none;font-size:11px;color:#c9b48e;margin-top:2px}
+/* kaizen loop */
+.kz{width:100%;border-collapse:collapse;font-size:12.5px}
+.kz th{font-size:11px;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:2px solid var(--line);white-space:nowrap}
+.kz td{padding:8px 8px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.55}
+.kz td.t{font-weight:700;color:var(--wood-dark);min-width:180px}
+.kz td.t small{display:block;font-weight:400;color:var(--muted);font-size:11px;margin-top:2px}
+.kz .st{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap}
+.kz .st.measuring{background:#fdf3dd;color:var(--warn)}
+.kz .st.effective{background:#e9f4ea;color:var(--accent)}
+.kz .st.no_effect{background:#fbeae7;color:var(--danger)}
+.kz .st.rolled_back{background:#eee;color:#666}
+.kz .st.proposal{background:#e8eef8;color:var(--info)}
+.kz .st.done{background:#e9f4ea;color:var(--accent)}
+.kz .num{white-space:nowrap;text-align:right}
+.kzloop{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+.kzloop span{background:#faf6ef;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:11.5px;color:var(--wood-dark);font-weight:700}
+.kzloop span::after{content:"→";margin-left:8px;color:var(--muted)}
+.kzloop span:last-child::after{content:""}
 /* funnel */
 .funnel{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap}
 .fstep{flex:1;min-width:120px;background:#faf6ef;border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-align:center;position:relative}
@@ -164,6 +182,13 @@ tr:hover td{background:#faf6ef}
   <section>
     <h2>🎯 行動・CTA</h2>
     <table id="ctaTbl"></table>
+  </section>
+
+  <section>
+    <h2>🔁 改善ループ <span class="hint">毎週火曜8:00に自動実行：集計→効果判定→改善の実装→台帳更新→メール報告（hp-kaizen-weekly）</span></h2>
+    <div class="kzloop" id="kzLoop"></div>
+    <div style="overflow-x:auto"><table class="kz" id="kzTbl"></table></div>
+    <div class="note" id="kzNote"></div>
   </section>
 
   <section>
@@ -427,6 +452,31 @@ function renderInsights(d){
   $("insights").innerHTML=out.length?out.join(""):'<li class="empty" style="list-style:none;margin-left:0">まだデータが少ないため、気づきはこれから貯まります（数日分の計測後に表示されます）</li>';
 }
 
+/* ===== 改善ループ台帳（kaizen_log.json・同リポジトリ） ===== */
+const KZ_ST={measuring:"測定中",effective:"効果あり",no_effect:"効果なし",rolled_back:"差し戻し",proposal:"提案(要判断)",done:"完了"};
+async function loadKaizen(){
+  try{
+    const r=await fetch("kaizen_log.json?t="+Date.now(),{cache:"no-store"});
+    const k=await r.json();
+    $("kzLoop").innerHTML=(k.loop&&k.loop.steps||[]).map(x=>"<span>"+esc(x)+"</span>").join("");
+    const items=(k.items||[]).slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.id||"").localeCompare(a.id||""));
+    $("kzTbl").innerHTML="<tr><th>日付</th><th>改善</th><th>狙う指標</th><th class='num'>導入前</th><th class='num'>導入後</th><th>判定</th><th>次の一手</th></tr>"+
+      items.map(x=>{
+        const b=x.baseline||{}, rs=x.result||{};
+        const st=x.status||"measuring";
+        return "<tr><td style='white-space:nowrap'>"+esc(x.date||"")+"</td>"+
+          "<td class='t'>"+esc(x.title||"")+"<small>"+esc(x.change||"")+(x.commit?"　<span style='font-family:monospace'>"+esc(x.commit)+"</span>":"")+"</small></td>"+
+          "<td>"+esc((x.metric||{}).label||"")+"</td>"+
+          "<td class='num'>"+(b.value==null?"–":esc(String(b.value)))+(b.period?"<br><small style='color:var(--muted)'>"+esc(b.period)+"</small>":"")+"</td>"+
+          "<td class='num'>"+(rs.value==null?"–":esc(String(rs.value)))+(rs.period?"<br><small style='color:var(--muted)'>"+esc(rs.period)+"</small>":"")+"</td>"+
+          "<td><span class='st "+esc(st)+"'>"+esc(KZ_ST[st]||st)+"</span>"+(rs.note?"<br><small style='color:var(--muted)'>"+esc(rs.note)+"</small>":"")+"</td>"+
+          "<td style='font-size:12px'>"+esc(x.next||"")+"</td></tr>";
+      }).join("");
+    const meas=items.filter(x=>x.status==="measuring").length, eff=items.filter(x=>x.status==="effective").length, no=items.filter(x=>x.status==="no_effect").length;
+    $("kzNote").innerHTML="台帳更新 "+esc(k.updated||"")+"　｜　測定中 "+meas+"件・効果あり "+eff+"件・効果なし "+no+"件　｜　判定基準: "+esc((k.loop||{}).judge||"")+"　｜　自動で触ってよい範囲: "+esc(((k.loop||{}).auto_ok||[]).join("・"))+"（価格・送料・フォーム・送信は提案のみ）";
+  }catch(e){ $("kzTbl").innerHTML="<tr><td class='empty'>台帳(kaizen_log.json)を読めませんでした</td></tr>"; }
+}
+loadKaizen();
 boot();
 </script>
 </body>

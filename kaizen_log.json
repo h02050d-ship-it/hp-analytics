@@ -1,0 +1,112 @@
+{
+  "version": 1,
+  "updated": "2026-09-03",
+  "loop": {
+    "cadence": "毎週火曜 8:00（scheduled task hp-kaizen-weekly）",
+    "steps": ["集計(api.php 7日/28日)", "効果判定(台帳の measuring を7日・14日で判定)", "分析(売上直結KPIの脱落点)", "改善の実装(小改修は自動・大改修は提案)", "台帳更新→ダッシュボード反映", "メール報告"],
+    "kpi_priority": ["サンプル請求(form_sample / funnel.sample)", "お問い合わせ・法人見積(form_contact / form_quote)", "取扱店を探す到達(funnel.markets)", "FAX/QR流入(refs FAX/QR:*)", "LINE開封(events.line)", "AIチャット誤答ゼロ"],
+    "auto_ok": ["CTAの文言・配置・色", "ブログ記事内リンク・関連記事", "ai/knowledge.txt 追記", "faq.html への質問追加", "title/description", "keisoku/pagenames.php 更新"],
+    "auto_ng": ["価格・送料・商品データ", "フォーム・決済・注文処理", "ページ削除・大幅デザイン変更", "メール/LINE/FAXの送信", "nouhin/ 配下"],
+    "judge": "率系(離脱率・直帰率)は−10pt以上で効果あり／件数系(到達・イベント)は+3件かつ+50%以上で効果あり。14日たっても動かなければ no_effect→差し戻しか別案。悪化(率+10pt・件数−50%)は即 git revert。"
+  },
+  "items": [
+    {
+      "id": "K001",
+      "date": "2026-09-03",
+      "title": "FAX/QR流入の計測＋短縮URL（/fax・/koumuten）",
+      "change": "hz.js が ?f= 流入コードを記録、流入元に「FAX/QR:xxx」表示。.htaccess で /fax→dealer.html?f=fax、/koumuten→business.html?f=koumuten",
+      "files": ["js/hz.js", "keisoku/api.php", ".htaccess"],
+      "commit": "b4ba333",
+      "metric": { "key": "refs.FAX/QR", "label": "FAX/QR経由セッション数(7日)" },
+      "baseline": { "period": "2026-09-01〜09-03", "value": 0 },
+      "expect": "FAX原稿のURLを hayazai.com/fax に差し替えた後、送付先の3〜5%が着地",
+      "status": "measuring",
+      "result": null,
+      "next": "FAX原稿のURL差し替え（本人）。着地社数を送付先リストと突き合わせ電話フォロー優先度に"
+    },
+    {
+      "id": "K002",
+      "date": "2026-09-03",
+      "title": "ブログ全記事に商品導線CTA（記事中＋末尾）",
+      "change": "components.js renderBlogCta: 3つ目h2前に参考価格＋無料サンプル/必要枚数計算/価格表、末尾CTAに枚数計算・取扱店を追加",
+      "files": ["js/components.js"],
+      "commit": "b4ba333",
+      "metric": { "key": "blog.exitRate", "label": "ブログ入口セッションの離脱率(平均)" },
+      "baseline": { "period": "2026-09-01〜09-03", "value": 100, "note": "ブログ入口27件・全員そのまま離脱／サンプル請求0" },
+      "expect": "離脱率 100%→80%台、サンプル/枚数計算/価格表への遷移が発生",
+      "status": "measuring",
+      "result": null,
+      "next": "効かなければCTAを1つ目h2直後へ移動、または記事末尾を『この記事の床材を見る』カード型に"
+    },
+    {
+      "id": "K003",
+      "date": "2026-09-03",
+      "title": "トップ ファーストビューに参考価格ピル",
+      "change": "index.html hero に「15mm桧フローリング 参考価格 ¥9,240／束〜｜価格表を見る」",
+      "files": ["index.html"],
+      "commit": "b4ba333",
+      "metric": { "key": "page./index.html.bounce", "label": "トップページ直帰率" },
+      "baseline": { "period": "2026-09-01〜09-03", "value": 60, "note": "スクロール到達50%・滞在62秒" },
+      "expect": "直帰率 60%→50%以下、商品・価格ページ到達の増加",
+      "status": "measuring",
+      "result": null,
+      "next": "効かなければヒーロー下に『価格・サンプル・取扱店』の3カードを追加"
+    },
+    {
+      "id": "K004",
+      "date": "2026-09-03",
+      "title": "「何枚必要？」記事のシミュレーターを主ボタン化",
+      "change": "blog/how-many-sheets.html 冒頭ボタンを塗りつぶし主ボタン『▶ 必要枚数を10秒で計算する』に",
+      "files": ["blog/how-many-sheets.html"],
+      "commit": "b4ba333",
+      "metric": { "key": "page./simulator.html.pv", "label": "必要量シミュレーターPV(7日)" },
+      "baseline": { "period": "2026-09-01〜09-03", "value": 2, "note": "記事は滞在34秒・スクロール40%" },
+      "expect": "シミュレーターPVが記事PVの30%以上",
+      "status": "measuring",
+      "result": null,
+      "next": "効かなければ記事内にシミュレーターを埋め込み(iframe)"
+    },
+    {
+      "id": "K005",
+      "date": "2026-09-03",
+      "title": "AI知識に黒ずみ・マット跡の対処を追加／テスト質問を除外",
+      "change": "ai/knowledge.txt に黒ずみ対処(#180〜240で削る→オイル塗り直し・再発防止)、api.php/k.php で test を含む質問を除外",
+      "files": ["ai/knowledge.txt", "keisoku/api.php", "keisoku/k.php"],
+      "commit": "b4ba333",
+      "metric": { "key": "ai.generic_answers", "label": "AI回答のうち一般論・『わかりかねます』の件数(7日)" },
+      "baseline": { "period": "2026-09-01〜09-03", "value": 1, "note": "バスマット黒ずみ→中性洗剤の一般論" },
+      "expect": "同種の質問に桧無垢床向けの具体回答＋ブログ誘導",
+      "status": "measuring",
+      "result": null,
+      "next": "誤答が出るたびに knowledge.txt を追記（毎週の定常作業）"
+    },
+    {
+      "id": "K006",
+      "date": "2026-09-03",
+      "title": "業者向けページのSEO（仕入れ・卸・業者価格）",
+      "change": "dealer.html / business.html の title・description に『桧フローリング 仕入れ・卸』『業者価格』",
+      "files": ["dealer.html", "business.html"],
+      "commit": "b4ba333",
+      "metric": { "key": "page./dealer.html+/business.html.en", "label": "取扱店募集・法人ページの入口セッション(7日)" },
+      "baseline": { "period": "2026-09-01〜09-03", "value": 0 },
+      "expect": "検索からの業者流入が月数件（効果は4〜8週かかる）",
+      "status": "measuring",
+      "result": null,
+      "next": "8週たっても0なら『桧フローリング 仕入れ』専用の記事を1本書く"
+    },
+    {
+      "id": "K007",
+      "date": "2026-09-03",
+      "title": "ファネルをHPの実導線に修正（計測側）",
+      "change": "トップ→商品・価格→取扱店を探す→サンプル請求→お問い合わせ→送信完了。旧カート系は廃止",
+      "files": ["keisoku/api.php", "hp-analytics/index.html"],
+      "commit": "b4ba333 / 74b3326",
+      "metric": { "key": "funnel.sample", "label": "サンプル請求ページ到達(7日)" },
+      "baseline": { "period": "2026-09-01〜09-03", "value": 0, "note": "top11→products5→markets6→sample0→contact3" },
+      "expect": "計測整備なので効果判定なし。以降の改善はこのファネルで測る",
+      "status": "done",
+      "result": { "period": "2026-09-03", "value": 0, "note": "計測整備完了" },
+      "next": null
+    }
+  ]
+}
