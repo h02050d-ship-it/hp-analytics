@@ -478,7 +478,7 @@
     "blog/how-to-choose-grade.html",
     "keisoku/pagenames.php"
    ],
-   "commit": "",
+   "commit": "ce4f53e",
    "metric": {
     "key": "seo.page./blog/how-to-choose-grade.html.ctr",
     "label": "等級記事の検索クリック率(28日)"
@@ -502,7 +502,7 @@
    "files": [
     ".htaccess"
    ],
-   "commit": "",
+   "commit": "ce4f53e",
    "metric": {
     "key": "seo.index.404",
     "label": "Search Console 404ページ数"
