@@ -327,7 +327,7 @@ async function fetchData(){
     DATA=j;
     try{ localStorage.setItem(CACHE_KEY,JSON.stringify({days:DAYS,data:j})); }catch(e){}
     setBadge("live","ライブ");
-    $("updated").textContent=j.range.from+" 〜 "+j.range.to;
+    $("updated").textContent=j.range.from+" 〜 "+j.range.to+(j.bots?"（AI・自動アクセス "+j.bots+"件は除外済み）":"");
     render();
   }catch(e){
     setBadge("err","オフライン");
